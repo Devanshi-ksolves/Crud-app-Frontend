@@ -1,3 +1,4 @@
+
 import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -19,8 +20,7 @@ const LoginForm = () => {
     onSubmit: async (values) => {
       try {
         const response = await login(values);
-        localStorage.setItem("token", response.token); // Store token
-        // Handle successful login (e.g., redirect to dashboard)
+        localStorage.setItem("token", response.token);
         alert("Login successful!");
       } catch (error) {
         console.error("Login error", error);
@@ -30,26 +30,43 @@ const LoginForm = () => {
   });
 
   return (
-    <form onSubmit={formik.handleSubmit}>
+    <form onSubmit={formik.handleSubmit} className="auth-form">
+      <h2 className="auth-title">Login</h2>
       <input
         type="email"
         placeholder="Email"
         {...formik.getFieldProps("email")}
+        className="auth-input"
       />
       {formik.touched.email && formik.errors.email ? (
-        <div>{formik.errors.email}</div>
+        <div className="error">{formik.errors.email}</div>
       ) : null}
 
       <input
         type="password"
         placeholder="Password"
         {...formik.getFieldProps("password")}
+        className="auth-input"
       />
       {formik.touched.password && formik.errors.password ? (
-        <div>{formik.errors.password}</div>
+        <div className="error">{formik.errors.password}</div>
       ) : null}
 
-      <button type="submit">Login</button>
+      <button type="submit" className="auth-button">
+        Login
+      </button>
+      <button
+        className="switch-button"
+        onClick={() => alert("Navigate to Forgot Password")}
+      >
+        Forgot Password?
+      </button>
+      <button
+        className="switch-button"
+        onClick={() => alert("Switch to Sign Up")}
+      >
+        Don't have an account? Sign Up
+      </button>
     </form>
   );
 };

@@ -1,11 +1,11 @@
 import React from "react";
-import AuthForm from "./Components/Auth.js";
-import "./App.css";
+import AppRouter from "./AppRouter";
+import './App.css';  // Include the CSS file
 
 const App = () => {
   return (
     <div className="App">
-      <AuthForm />
+      <AppRouter />
     </div>
   );
 };

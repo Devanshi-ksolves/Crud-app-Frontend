@@ -26,8 +26,14 @@ const SignupForm = () => {
   });
 
   return (
-    <form onSubmit={formik.handleSubmit}>
-      <input type="text" placeholder="Name" {...formik.getFieldProps("name")} />
+    <form onSubmit={formik.handleSubmit} className="auth-form">
+      <h2 className="auth-title">Sign Up</h2>
+      <input
+        type="text"
+        placeholder="Name"
+        {...formik.getFieldProps("name")}
+        className="auth-input"
+      />
       {formik.touched.name && formik.errors.name ? (
         <div className="error">{formik.errors.name}</div>
       ) : null}
@@ -36,6 +42,7 @@ const SignupForm = () => {
         type="email"
         placeholder="Email"
         {...formik.getFieldProps("email")}
+        className="auth-input"
       />
       {formik.touched.email && formik.errors.email ? (
         <div className="error">{formik.errors.email}</div>
@@ -45,6 +52,7 @@ const SignupForm = () => {
         type="password"
         placeholder="Password"
         {...formik.getFieldProps("password")}
+        className="auth-input"
       />
       {formik.touched.password && formik.errors.password ? (
         <div className="error">{formik.errors.password}</div>
@@ -54,12 +62,21 @@ const SignupForm = () => {
         type="password"
         placeholder="Confirm Password"
         {...formik.getFieldProps("confirmPassword")}
+        className="auth-input"
       />
       {formik.touched.confirmPassword && formik.errors.confirmPassword ? (
         <div className="error">{formik.errors.confirmPassword}</div>
       ) : null}
 
-      <button type="submit">Sign Up</button>
+      <button type="submit" className="auth-button">
+        Sign Up
+      </button>
+      <button
+        className="switch-button"
+        onClick={() => alert("Switch to Login")}
+      >
+        Already have an account? Login
+      </button>
     </form>
   );
 };

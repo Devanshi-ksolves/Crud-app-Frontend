@@ -42,3 +42,17 @@ export const updateUser = async (id, userData) => {
 export const deleteUser = async (id) => {
   return fetchAPI(`/${id}`, "DELETE");
 };
+
+// Request OTP for forgot password
+export const requestOtp = async (email) => {
+  return fetchAPI("/forgot-password", "POST", { email });
+};
+
+// Validate OTP and reset password
+export const resetPassword = async (email, otp, newPassword) => {
+  return fetchAPI("/validate-otp", "POST", {
+    email,
+    otp,
+    newPassword,
+  });
+};
