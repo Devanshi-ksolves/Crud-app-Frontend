@@ -1,25 +1,22 @@
-import React from "react";
-import {
-  BrowserRouter as Router,
-  Route,
-  Routes,
-  Navigate,
-} from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import LoginForm from "./Components/Login";
-import SignupForm from "./Components/signUp";
-import ForgotPasswordForm from "./Components/ForgotPasswordForm";
+import ForgetPassword from "./Components/ForgotPasswordForm";
+import SignUp from "./Components/signUp";
+import AdminDashboard from "./Components/AdminDashboard";
+import UserDashboard from "./Components/UserDashboard";
 
-const AppRouter = () => {
+function AppRouter() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/login" element={<LoginForm />} />
-        <Route path="/signup" element={<SignupForm />} />
-        <Route path="/forgot-password" element={<ForgotPasswordForm />} />
+        <Route path="/" element={<LoginForm />} />
+        <Route path="/forget-password" element={<ForgetPassword />} />
+        <Route path="/sign-up" element={<SignUp />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/user-dashboard" element={<UserDashboard />} />
       </Routes>
     </Router>
   );
-};
+}
 
 export default AppRouter;

@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3000/api/users"; // Update to include the base path
+const API_BASE_URL = "http://localhost:3000/api/users";
 
 export const fetchAPI = async (endpoint, method = "GET", body = null) => {
   const token = localStorage.getItem("token");
@@ -9,7 +9,8 @@ export const fetchAPI = async (endpoint, method = "GET", body = null) => {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: body ? JSON.stringify(body) : null,
+    // Only include body if method is not GET
+    body: method !== "GET" ? JSON.stringify(body) : null,
   });
 
   if (!response.ok) {
@@ -28,9 +29,8 @@ export const login = async (credentials) => {
   return fetchAPI("/login", "POST", credentials);
 };
 
-// Fetch user details
-export const getUser = async (id) => {
-  return fetchAPI(`/${id}`, "GET");
+export const getUsers = async () => {
+  return fetchAPI("/", "GET");
 };
 
 // Update user details
@@ -49,10 +49,34 @@ export const requestOtp = async (email) => {
 };
 
 // Validate OTP and reset password
-export const resetPassword = async (email, otp, newPassword) => {
-  return fetchAPI("/validate-otp", "POST", {
+export const validateOtp = async (email, otp, token) => {
+  const response = await fetchAPI("/validate-otp", "POST", {
     email,
     otp,
+    token,
+  });
+  return response;
+};
+
+export const resetPassword = async (email, newPassword) => {
+  return fetchAPI("/reset-password", "POST", {
+    email,
     newPassword,
   });
+};
+
+export const getUserIdByEmail = async (email, authToken) => {
+  return fetchAPI(`/users?email=${email}`, "GET", {
+    headers: {
+      Authorization: `Bearer ${authToken}`,
+    },
+  });
+};
+
+export const getUser = async (userId) => {
+  return fetchAPI(`/${userId}`, "GET");
+};
+
+export const impersonateUser = async (userId) => {
+  return fetchAPI(`/impersonate/${userId}`, "POST", { userId });
 };

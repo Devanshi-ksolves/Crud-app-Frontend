@@ -1,9 +1,12 @@
 import React from "react";
 import { useFormik } from "formik";
+import { useNavigate } from "react-router-dom";
 import { signup } from "../api/api";
 import { signupValidationSchema } from "../utils/ValidationSchema";
 
 const SignupForm = () => {
+  const navigate = useNavigate();
+
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -71,10 +74,7 @@ const SignupForm = () => {
       <button type="submit" className="auth-button">
         Sign Up
       </button>
-      <button
-        className="switch-button"
-        onClick={() => alert("Switch to Login")}
-      >
+      <button className="switch-button" onClick={() => navigate("/")}>
         Already have an account? Login
       </button>
     </form>

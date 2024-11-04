@@ -1,11 +1,13 @@
-
 import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { useNavigate } from "react-router-dom";
 import { Messages } from "../utils/Messages";
 import { login } from "../api/api";
 
 const LoginForm = () => {
+  const navigate = useNavigate();
+
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -20,7 +22,15 @@ const LoginForm = () => {
     onSubmit: async (values) => {
       try {
         const response = await login(values);
+
         localStorage.setItem("token", response.token);
+
+        if (response.role === "admin") {
+          navigate("/admin-dashboard");
+        } else {
+          navigate("/user-dashboard");
+        }
+
         alert("Login successful!");
       } catch (error) {
         console.error("Login error", error);
@@ -55,15 +65,19 @@ const LoginForm = () => {
       <button type="submit" className="auth-button">
         Login
       </button>
+
       <button
+        type="button"
         className="switch-button"
-        onClick={() => alert("Navigate to Forgot Password")}
+        onClick={() => navigate("/forget-password")}
       >
         Forgot Password?
       </button>
+
       <button
+        type="button"
         className="switch-button"
-        onClick={() => alert("Switch to Sign Up")}
+        onClick={() => navigate("/sign-up")}
       >
         Don't have an account? Sign Up
       </button>
