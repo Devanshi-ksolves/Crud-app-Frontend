@@ -18,9 +18,11 @@ export const Messages = {
     required: "Email and password are required.",
     invalidCredentials: "Invalid email or password.",
   },
-  reset:{
-    success:"Password reset successful!",
-    error:"Error Reseting Password !"
-
-  }
+  reset: {
+    success: "Password reset successful!",
+    error: "Error Reseting Password !",
+  },
+  update: {
+    success: "Updated Succcessfully",
+  },
 };

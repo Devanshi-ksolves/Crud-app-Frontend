@@ -1,15 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
-import { getUsers, deleteUser, updateUser, impersonateUser } from "../api/api"; // Updated to include getUsers
+import { useNavigate } from "react-router-dom";
+import { getUsers, deleteUser, updateUser, impersonateUser } from "../api/api";
 import EditUserModal from "./EditUserModal";
 
 const AdminDashboard = () => {
-  const navigate = useNavigate(); // Initialize useNavigate
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -28,11 +29,20 @@ const AdminDashboard = () => {
     fetchUsers();
   }, []);
 
+  const handleSearchChange = (event) => {
+    const inputValue = event.target.value;
+    setSearchTerm(inputValue);
+  };
+
+  const filteredUsers = users.filter((user) =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await deleteUser(id);
-        setUsers(users.filter((user) => user.id !== id));
+        setUsers(users.filter((user) => user.id !== id)); // Update original users
       } catch (error) {
         console.error("Failed to delete user:", error);
         alert("Failed to delete user.");
@@ -79,8 +89,8 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); 
-    navigate("/"); 
+    localStorage.removeItem("token");
+    navigate("/");
   };
 
   if (loading) return <p>Loading...</p>;
@@ -90,9 +100,16 @@ const AdminDashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-header">
         <h2 className="dashboard-title">Admin Dashboard</h2>
-        <button className="alogout-button" onClick={handleLogout}>
+        <button className="logout-button" onClick={handleLogout}>
           Logout
         </button>
+        <input
+          type="text"
+          value={searchTerm}
+          onChange={handleSearchChange}
+          placeholder="Search by name..."
+          className="search-input"
+        />
       </div>
 
       {showModal && selectedUser && (
@@ -103,19 +120,19 @@ const AdminDashboard = () => {
         />
       )}
 
-      {users.length > 0 ? (
-        <table className="dashboard-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user) => (
+      <table className="dashboard-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredUsers.length > 0 ? (
+            filteredUsers.map((user) => (
               <tr key={user.id}>
                 <td>{user.id}</td>
                 <td>{user.name}</td>
@@ -134,11 +151,21 @@ const AdminDashboard = () => {
                   </button>
                 </td>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No users found.</p>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="5" style={{ textAlign: "center" }}>
+                No users found.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {filteredUsers.length === 0 && searchTerm && (
+        <p style={{ textAlign: "center", marginTop: "10px" }}>
+          No user found matching your search.
+        </p>
       )}
     </div>
   );

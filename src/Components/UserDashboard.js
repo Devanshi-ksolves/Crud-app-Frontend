@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
-import { getUser, updateUser } from "../api/api"; 
+import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+import { getUser, updateUser } from "../api/api";
 import { Messages } from "../utils/Messages";
 
 const UserDashboard = () => {
-  const navigate = useNavigate(); 
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isResetPassword, setIsResetPassword] = useState(false);
@@ -18,25 +19,29 @@ const UserDashboard = () => {
       const params = new URLSearchParams(window.location.search);
       const impersonateId = params.get("impersonate");
 
-      if (impersonateId) {
-        try {
-          const userInfo = await getUser(impersonateId); 
-          setUser(userInfo);
-          setFormData({ name: userInfo.name, password: "" }); 
-        } catch (error) {
-          setErrorMessage(
-            error.response
-              ? error.response.data
-              : "Failed to fetch user info: " + error.message
-          );
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setErrorMessage("No token found, please log in.");
+          return navigate("/login");
         }
-      } else {
-        setErrorMessage("No user ID provided for impersonation.");
+
+        const decodedToken = jwtDecode(token);
+        const userId = impersonateId || decodedToken.id;
+
+        const userInfo = await getUser(userId); 
+        setFormData({ name: userInfo.name, password: "" });
+      } catch (error) {
+        setErrorMessage(
+          error.response
+            ? error.response.data
+            : "Failed to fetch user info: " + error.message
+        );
       }
     };
 
     fetchUserInfo();
-  }, []);
+  }, [navigate]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -45,7 +50,7 @@ const UserDashboard = () => {
   const handleCancelClick = () => {
     setIsEditing(false);
     setIsResetPassword(false);
-    setFormData({ name: user.name, password: "" }); 
+    setFormData({ name: user.name, password: "" });
   };
 
   const handleChange = (e) => {
@@ -57,11 +62,11 @@ const UserDashboard = () => {
   };
 
   const handleResetPasswordClick = () => {
-    setIsResetPassword(true); 
+    setIsResetPassword(true);
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("token"); 
+    localStorage.removeItem("token");
     navigate("/");
   };
 
@@ -77,7 +82,7 @@ const UserDashboard = () => {
     }
 
     try {
-      await updateUser(user.id, updateData); 
+      await updateUser(user.id, updateData);
       setSuccessMessage("User details updated successfully!");
       setUser({ ...user, name: formData.name });
       setIsEditing(false);
@@ -90,7 +95,7 @@ const UserDashboard = () => {
   };
 
   if (!user) {
-    return <div>Loading...</div>; 
+    return <div>Loading...</div>;
   }
 
   return (
@@ -117,11 +122,7 @@ const UserDashboard = () => {
           </p>
           <p>
             <strong>Email:</strong>
-            <input
-              type="text"
-              value={user.email}
-              disabled 
-            />
+            <input type="text" value={user.email} disabled />
           </p>
         </div>
 
@@ -151,8 +152,14 @@ const UserDashboard = () => {
           <button onClick={handleEditClick}>Edit Profile</button>
         )}
 
-        {errorMessage && <Messages type="error" message={errorMessage} />}
-        {successMessage && <Messages type="success" message={successMessage} />}
+        {errorMessage && (
+          <div className="message error">
+            {Messages.login.invalidCredentials}
+          </div>
+        )}
+        {successMessage && (
+          <div className="message success">{Messages.update.success}</div>
+        )}
       </div>
     </div>
   );
