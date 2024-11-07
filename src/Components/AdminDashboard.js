@@ -11,13 +11,17 @@ const AdminDashboard = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [page, setPage] = useState(1);
+  const [pageSize] = useState(10);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const data = await getUsers();
-        setUsers(data);
+        const data = await getUsers({ page, pageSize });
+        setUsers(data.users);
+        setTotalPages(data.totalPages);
       } catch (error) {
         console.error("Failed to load users:", error);
         setError("Failed to load users.");
@@ -27,11 +31,11 @@ const AdminDashboard = () => {
     };
 
     fetchUsers();
-  }, []);
+  }, [page, pageSize]);
 
   const handleSearchChange = (event) => {
-    const inputValue = event.target.value;
-    setSearchTerm(inputValue);
+    setSearchTerm(event.target.value);
+    setPage(1); 
   };
 
   const filteredUsers = users.filter((user) =>
@@ -42,7 +46,7 @@ const AdminDashboard = () => {
     if (window.confirm("Are you sure you want to delete this user?")) {
       try {
         await deleteUser(id);
-        setUsers(users.filter((user) => user.id !== id)); // Update original users
+        setUsers(users.filter((user) => user.id !== id));
       } catch (error) {
         console.error("Failed to delete user:", error);
         alert("Failed to delete user.");
@@ -91,6 +95,12 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     navigate("/");
+  };
+
+  const handlePageChange = (newPage) => {
+    if (newPage > 0 && newPage <= totalPages) {
+      setPage(newPage);
+    }
   };
 
   if (loading) return <p>Loading...</p>;
@@ -161,6 +171,24 @@ const AdminDashboard = () => {
           )}
         </tbody>
       </table>
+
+      <div className="pagination">
+        <button
+          disabled={page === 1}
+          onClick={() => handlePageChange(page - 1)}
+        >
+          Previous
+        </button>
+        <span>
+          Page {page} of {totalPages}
+        </span>
+        <button
+          disabled={page === totalPages}
+          onClick={() => handlePageChange(page + 1)}
+        >
+          Next
+        </button>
+      </div>
 
       {filteredUsers.length === 0 && searchTerm && (
         <p style={{ textAlign: "center", marginTop: "10px" }}>

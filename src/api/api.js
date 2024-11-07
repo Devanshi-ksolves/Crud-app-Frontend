@@ -29,8 +29,11 @@ export const login = async (credentials) => {
   return fetchAPI("/login", "POST", credentials);
 };
 
-export const getUsers = async () => {
-  return fetchAPI("/", "GET");
+export const getUsers = async ({ page = 1, pageSize = 10, search = "" }) => {
+  return fetchAPI(
+    `/?page=${page}&pageSize=${pageSize}&search=${search}`,
+    "GET"
+  );
 };
 
 // Update user details
@@ -59,10 +62,11 @@ export const validateOtp = async (email, otp, token) => {
 };
 
 export const resetPassword = async (email, newPassword) => {
-  return fetchAPI("/reset-password", "POST", {
+  const response = fetchAPI("/reset-password", "POST", {
     email,
     newPassword,
   });
+  return response;
 };
 
 export const getUserIdByEmail = async (email, authToken) => {
@@ -74,7 +78,8 @@ export const getUserIdByEmail = async (email, authToken) => {
 };
 
 export const getUser = async (userId) => {
-  return fetchAPI(`/${userId}`, "GET");
+  const user = await fetchAPI(`/${userId}`, "GET");
+  return user; // Ensure this returns the entire user object including new fields
 };
 
 export const impersonateUser = async (userId) => {

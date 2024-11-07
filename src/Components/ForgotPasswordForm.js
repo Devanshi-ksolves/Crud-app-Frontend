@@ -3,6 +3,7 @@ import { requestOtp, validateOtp, resetPassword } from "../api/api";
 import { Messages } from "../utils/Messages";
 import * as Yup from "yup";
 import { useFormik } from "formik";
+import { useNavigate } from "react-router-dom";
 
 const passwordValidationSchema = Yup.object({
   newPassword: Yup.string()
@@ -28,6 +29,7 @@ const ForgetPassword = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSendOtp = async (e) => {
     e.preventDefault();
@@ -55,7 +57,6 @@ const ForgetPassword = () => {
 
     try {
       const response = await validateOtp(email, otp, token);
-
       console.log("Response from OTP validation:", response);
 
       if (response.message && response.message.includes("Successful")) {
@@ -85,8 +86,14 @@ const ForgetPassword = () => {
       setSuccessMessage("");
 
       try {
-        await resetPassword(email, token, values.newPassword);
+        await resetPassword(email, values.newPassword);
+        // console.log("Password Reset Response:", response);
+
         setSuccessMessage(Messages.reset.success);
+
+        setTimeout(() => {
+          navigate("/");
+        }, 2000);
       } catch (error) {
         setErrorMessage(Messages.reset.error + error.message);
       } finally {
