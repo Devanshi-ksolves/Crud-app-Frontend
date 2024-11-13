@@ -27,6 +27,8 @@ const LoginForm = () => {
 
         if (response.role === "admin") {
           navigate("/admin-dashboard");
+        } else if (response.role === "super_admin") {
+          navigate("/super-admin-dashboard");
         } else {
           navigate("/user-dashboard");
         }

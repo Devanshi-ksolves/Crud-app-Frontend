@@ -1,3 +1,5 @@
+import { jwtDecode } from "jwt-decode";
+
 const API_BASE_URL = "http://localhost:3000/api/users";
 
 export const fetchAPI = async (endpoint, method = "GET", body = null) => {
@@ -26,7 +28,19 @@ export const signup = async (userData) => {
 };
 
 export const login = async (credentials) => {
-  return fetchAPI("/login", "POST", credentials);
+  const response = await fetchAPI("/login", "POST", credentials);
+
+  const { token } = response;
+
+  if (token) {
+    const decodedToken = jwtDecode(token); 
+    const userId = decodedToken.id; 
+
+    localStorage.setItem("token", token);
+    localStorage.setItem("userId", userId); 
+  }
+
+  return response;
 };
 
 export const getUsers = async ({ page = 1, pageSize = 10, search = "" }) => {
@@ -84,4 +98,31 @@ export const getUser = async (userId) => {
 
 export const impersonateUser = async (userId) => {
   return fetchAPI(`/impersonate/${userId}`, "POST", { userId });
+};
+
+// Updated uploadFiles function
+export const uploadFiles = async (userId, filesData) => {
+  const formData = new FormData();
+  if (filesData.profilePicture) {
+    formData.append("profilePicture", filesData.profilePicture);
+  }
+  if (filesData.document) {
+    formData.append("document", filesData.document);
+  }
+
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${API_BASE_URL}/upload-files`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData, 
+  });
+
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(errorResponse.message || "Network response was not ok");
+  }
+
+  return response.json();
 };

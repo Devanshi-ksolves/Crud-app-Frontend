@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-import { getUser, updateUser } from "../api/api";
-import { Messages } from "../utils/Messages";
+import { getUser, updateUser, uploadFiles } from "../api/api";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -14,10 +13,12 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    password: "",
+    password: "", 
     profilePicture: null,
     document: null,
   });
+  const [previewImage, setPreviewImage] = useState(null);
+  const [previewDocument, setPreviewDocument] = useState(null);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -44,9 +45,7 @@ const UserDashboard = () => {
         });
       } catch (error) {
         setErrorMessage(
-          error.response
-            ? error.response.data
-            : "Failed to fetch user info: " + error.message
+          error.response ? error.response.data : "Failed to fetch user info"
         );
       }
     };
@@ -54,9 +53,7 @@ const UserDashboard = () => {
     fetchUserInfo();
   }, [navigate]);
 
-  const handleEditClick = () => {
-    setIsEditing(true);
-  };
+  const handleEditClick = () => setIsEditing(true);
 
   const handleCancelClick = () => {
     setIsEditing(false);
@@ -67,18 +64,44 @@ const UserDashboard = () => {
       profilePicture: null,
       document: null,
     });
+    setPreviewImage(null);
+    setPreviewDocument(null);
   };
 
   const handleChange = (e) => {
     const { name, value, files } = e.target;
+    const file = files ? files[0] : null;
+
     setFormData((prevData) => ({
       ...prevData,
-      [name]: files ? files[0] : value,
+      [name]: file ? file : value,
     }));
+
+    if (file && name === "profilePicture") {
+      const reader = new FileReader();
+      reader.onload = () => setPreviewImage(reader.result);
+      reader.readAsDataURL(file);
+    } else if (file && name === "document") {
+      setPreviewDocument(URL.createObjectURL(file));
+    }
   };
 
-  const handleResetPasswordClick = () => {
-    setIsResetPassword(true);
+  const handleRemoveFile = (fileType) => {
+    setFormData((prevData) => ({
+      ...prevData,
+      [fileType]: null,
+    }));
+
+    if (fileType === "profilePicture") {
+      setPreviewImage(null);
+    } else if (fileType === "document") {
+      setPreviewDocument(null);
+    }
+
+    const fileInput = document.querySelector(`input[name=${fileType}]`);
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const handleLogout = () => {
@@ -92,11 +115,15 @@ const UserDashboard = () => {
     setSuccessMessage("");
     setLoading(true);
 
-    const updateData = new FormData();
-    updateData.append("name", formData.name);
+    const updateJsonData = {
+      name: formData.name,
+    };
+
     if (isResetPassword && formData.password) {
-      updateData.append("password", formData.password);
+      updateJsonData.password = formData.password;
     }
+
+    const updateData = new FormData();
     if (formData.profilePicture) {
       updateData.append("profilePicture", formData.profilePicture);
     }
@@ -105,17 +132,12 @@ const UserDashboard = () => {
     }
 
     try {
-      await updateUser(user.id, updateData);
+      await updateUser(user.id, updateJsonData, updateData);
+
       setSuccessMessage("User details updated successfully!");
       setUser((prevUser) => ({ ...prevUser, name: formData.name }));
       setIsEditing(false);
       setIsResetPassword(false);
-      setFormData({
-        name: formData.name,
-        password: "",
-        profilePicture: null,
-        document: null,
-      });
     } catch (error) {
       setErrorMessage("Failed to update user details: " + error.message);
     } finally {
@@ -123,9 +145,24 @@ const UserDashboard = () => {
     }
   };
 
-  if (!user) {
-    return <div>Loading...</div>;
-  }
+  const handleFileUpload = async (e) => {
+    e.preventDefault();
+    if (!formData.profilePicture && !formData.document) {
+      setErrorMessage("Please select a file to upload.");
+      return;
+    }
+    setLoading(true);
+    try {
+      await uploadFiles(user.id, formData);
+      setSuccessMessage("Files uploaded successfully!");
+    } catch (error) {
+      setErrorMessage("Failed to upload files: " + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!user) return <div>Loading...</div>;
 
   return (
     <div className="content">
@@ -133,99 +170,137 @@ const UserDashboard = () => {
         <button className="logout-button" onClick={handleLogout}>
           Logout
         </button>
-        <h2>User Dashboard</h2>
-        <div className="user-info">
-          <p>
-            <strong>Name:</strong>
-            {isEditing ? (
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleChange}
-                required
-              />
-            ) : (
-              <span>{user.name}</span>
-            )}
-          </p>
-          <p>
-            <strong>Email:</strong>
-            <input type="text" value={user.email} disabled />
-          </p>
-          <p>
-            <strong>Profile Picture:</strong>
-            {user.profilePicture && !isEditing ? (
-              <img
-                src={user.profilePicture}
-                alt="Profile"
-                style={{ width: 100, height: 100 }}
-              />
-            ) : (
-              isEditing && (
-                <input
-                  type="file"
-                  name="profilePicture"
-                  accept="image/*"
-                  onChange={handleChange}
-                />
-              )
-            )}
-          </p>
-          <p>
-            <strong>Document:</strong>
-            {user.document && !isEditing ? (
-              <a href={user.document} target="_blank" rel="noopener noreferrer">
-                View Document
-              </a>
-            ) : (
-              isEditing && (
-                <input
-                  type="file"
-                  name="document"
-                  accept="application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                  onChange={handleChange}
-                />
-              )
-            )}
-          </p>
-        </div>
+        <h2>Welcome, {user.name}</h2>
+        <button className="edit-button" onClick={handleEditClick}>
+          Edit Profile
+        </button>
 
-        {isEditing ? (
-          <form onSubmit={handleSubmit} encType="multipart/form-data">
-            {isResetPassword ? (
-              <input
-                type="password"
-                name="password"
-                placeholder="Enter new password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
-            ) : (
-              <button type="button" onClick={handleResetPasswordClick}>
-                Reset Password
-              </button>
+        {isEditing && (
+          <form onSubmit={handleSubmit} className="edit-form">
+            <label>Name:</label>
+            <input
+              type="text"
+              name="name"
+              value={formData.name}
+              onChange={handleChange}
+              required
+            />
+
+            <label>Email:</label>
+            <input type="text" value={user.email} disabled />
+
+            <div className="password-toggle">
+              <label>Reset Password</label>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={isResetPassword}
+                  onChange={() => setIsResetPassword(!isResetPassword)}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
+
+            {isResetPassword && (
+              <>
+                <label>Password:</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+              </>
             )}
-            <button type="submit" disabled={loading}>
-              {loading ? "Updating..." : "Update"}
+
+            <div className="file-upload">
+              <label>Profile Picture:</label>
+              <input
+                type="file"
+                name="profilePicture"
+                accept="image/*"
+                onChange={handleChange}
+                disabled={loading}
+              />
+              {formData.profilePicture && (
+                <div className="file-info">
+                  <span>{formData.profilePicture.name}</span>
+                  <button
+                    type="button"
+                    className="remove-file-button"
+                    onClick={() => handleRemoveFile("profilePicture")}
+                  >
+                    ✕
+                  </button>
+                  {/* Preview Image */}
+                  {previewImage && (
+                    <div className="preview-container">
+                      <img
+                        src={previewImage}
+                        alt="Profile Preview"
+                        className="file-preview"
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <label>Document:</label>
+              <input
+                type="file"
+                name="document"
+                accept=".pdf,.doc,.docx"
+                onChange={handleChange}
+                disabled={loading}
+              />
+              {formData.document && (
+                <div className="file-info">
+                  <span>{formData.document.name}</span>
+                  <button
+                    type="button"
+                    className="remove-file-button"
+                    onClick={() => handleRemoveFile("document")}
+                  >
+                    ✕
+                  </button>
+                  {/* Document Preview */}
+                  {previewDocument && (
+                    <div className="preview-container">
+                      <iframe
+                        src={previewDocument}
+                        title="Document Preview"
+                        className="file-preview"
+                      ></iframe>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <button
+                className="upload-button"
+                onClick={handleFileUpload}
+                disabled={loading}
+              >
+                Upload
+              </button>
+            </div>
+
+            <button type="submit" className="save-button" disabled={loading}>
+              Save Changes
             </button>
-            <button type="button" onClick={handleCancelClick}>
+            <button
+              type="button"
+              className="cancel-button"
+              onClick={handleCancelClick}
+            >
               Cancel
             </button>
           </form>
-        ) : (
-          <button onClick={handleEditClick}>Edit Profile</button>
         )}
 
-        {errorMessage && (
-          <div className="message error">
-            {Messages.login.invalidCredentials}
-          </div>
-        )}
-        {successMessage && (
-          <div className="message success">{Messages.update.success}</div>
-        )}
+        {errorMessage && <div className="error">{errorMessage}</div>}
+        {successMessage && <div className="success">{successMessage}</div>}
       </div>
     </div>
   );

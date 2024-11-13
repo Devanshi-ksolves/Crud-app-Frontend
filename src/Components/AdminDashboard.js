@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getUsers, deleteUser, updateUser, impersonateUser } from "../api/api";
+import {
+  getUsers,
+  deleteUser,
+  updateUser,
+  impersonateUser,
+  getUser,
+} from "../api/api";
 import EditUserModal from "./EditUserModal";
 
 const AdminDashboard = () => {
@@ -14,6 +20,23 @@ const AdminDashboard = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+  const [loggedInUser, setLoggedInUser] = useState(null); 
+
+  useEffect(() => {
+    const fetchLoggedInUser = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          const userData = await getUser(userId);
+          setLoggedInUser(userData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch logged-in user:", error);
+      }
+    };
+
+    fetchLoggedInUser();
+  }, []);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -35,7 +58,7 @@ const AdminDashboard = () => {
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
-    setPage(1); 
+    setPage(1);
   };
 
   const filteredUsers = users.filter((user) =>
@@ -77,11 +100,31 @@ const AdminDashboard = () => {
 
   const handleImpersonate = async (userId) => {
     try {
+      const originalUserId = loggedInUser?.id;
+
       const userInfo = await impersonateUser(userId);
       console.log("Impersonate Response:", userInfo);
 
       if (userInfo && userInfo.token && userInfo.role) {
-        window.open(`/user-dashboard?impersonate=${userId}`, "_blank");
+        if (userInfo.role === "admin" || userInfo.role === "super_admin") {
+          if (loggedInUser.role === "super_admin") {
+            localStorage.setItem("originalUserId", originalUserId);
+            localStorage.setItem("userId", userId);
+            window.open(`/admin-dashboard?impersonate=${userId}`, "_blank");
+          } else {
+            const isAdminImpersonatable =
+              userInfo.privileges?.includes("Impersonate User");
+            if (isAdminImpersonatable) {
+              localStorage.setItem("userId", userId);
+              window.open("/admin-dashboard", "_blank");
+            } else {
+              alert("This admin does not have impersonation privileges.");
+            }
+          }
+        } else {
+          localStorage.setItem("userId", userId);
+          window.open(`/user-dashboard?impersonate=${userId}`, "_blank");
+        }
       } else {
         console.error("User ID is undefined or missing token:", userInfo);
         alert("User not found or impersonation failed.");
@@ -93,8 +136,15 @@ const AdminDashboard = () => {
   };
 
   const handleLogout = () => {
+    const originalUserId = localStorage.getItem("originalUserId");
+    if (originalUserId) {
+      localStorage.setItem("userId", originalUserId); 
+      localStorage.removeItem("originalUserId"); 
+    }
+
     localStorage.removeItem("token");
-    navigate("/");
+    localStorage.removeItem("userId");
+    navigate("/"); 
   };
 
   const handlePageChange = (newPage) => {
@@ -102,6 +152,12 @@ const AdminDashboard = () => {
       setPage(newPage);
     }
   };
+
+  const canImpersonate =
+    loggedInUser &&
+    (loggedInUser.role === "super_admin" ||
+      (loggedInUser.role === "admin" &&
+        loggedInUser.privileges?.includes("Impersonate User")));
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
@@ -141,50 +197,39 @@ const AdminDashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredUsers.length > 0 ? (
-            filteredUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
-                <td>{user.name}</td>
-                <td>{user.email}</td>
-                <td>{user.role}</td>
-                <td>
-                  <button onClick={() => handleEdit(user)}>Edit</button>
-                  <button
-                    className="delete"
-                    onClick={() => handleDelete(user.id)}
-                  >
-                    Delete
-                  </button>
+          {filteredUsers.map((user) => (
+            <tr key={user.id}>
+              <td>{user.id}</td>
+              <td>{user.name}</td>
+              <td>{user.email}</td>
+              <td>{user.role}</td>
+              <td>
+                <button onClick={() => handleEdit(user)}>Edit</button>
+                {canImpersonate && (
                   <button onClick={() => handleImpersonate(user.id)}>
                     Impersonate
                   </button>
-                </td>
-              </tr>
-            ))
-          ) : (
-            <tr>
-              <td colSpan="5" style={{ textAlign: "center" }}>
-                No users found.
+                )}
+                <button
+                  className="delete"
+                  onClick={() => handleDelete(user.id)}
+                >
+                  Delete
+                </button>
               </td>
             </tr>
-          )}
+          ))}
         </tbody>
       </table>
 
       <div className="pagination">
-        <button
-          disabled={page === 1}
-          onClick={() => handlePageChange(page - 1)}
-        >
-          Previous
+        <button onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
+          Prev
         </button>
-        <span>
-          Page {page} of {totalPages}
-        </span>
+        <span>{`Page ${page} of ${totalPages}`}</span>
         <button
-          disabled={page === totalPages}
           onClick={() => handlePageChange(page + 1)}
+          disabled={page >= totalPages}
         >
           Next
         </button>

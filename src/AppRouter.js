@@ -4,6 +4,7 @@ import ForgetPassword from "./Components/ForgotPasswordForm";
 import SignUp from "./Components/signUp";
 import AdminDashboard from "./Components/AdminDashboard";
 import UserDashboard from "./Components/UserDashboard";
+import SuperAdminDashboard from "./Components/SuperAdminDashboard";
 
 function AppRouter() {
   return (
@@ -14,6 +15,10 @@ function AppRouter() {
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
+        <Route
+          path="/super-admin-dashboard"
+          element={<SuperAdminDashboard />}
+        />
       </Routes>
     </Router>
   );
