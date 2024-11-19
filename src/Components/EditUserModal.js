@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { getUser } from "../api/api";
 
 const PRIVILEGES_OPTIONS = ["Delete User", "Impersonate User", "Assign Roles"];
 
@@ -11,6 +12,7 @@ const EditUserModal = ({ user, onClose, onSave }) => {
   });
 
   const [confirmationMessage, setConfirmationMessage] = useState("");
+  const [loggedInUser, setLoggedInUser] = useState(null);
 
   const ensureArray = (privileges) => {
     if (typeof privileges === "string") {
@@ -18,6 +20,22 @@ const EditUserModal = ({ user, onClose, onSave }) => {
     }
     return Array.isArray(privileges) ? privileges : [];
   };
+
+  useEffect(() => {
+    const fetchLoggedInUser = async () => {
+      try {
+        const userId = localStorage.getItem("userId");
+        if (userId) {
+          const userData = await getUser(userId);
+          setLoggedInUser(userData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch logged-in user:", error);
+      }
+    };
+
+    fetchLoggedInUser();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -72,7 +90,6 @@ const EditUserModal = ({ user, onClose, onSave }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Confirm role change if there's a message
     if (confirmationMessage) {
       const confirmed = window.confirm(confirmationMessage);
       if (!confirmed) {
@@ -90,6 +107,12 @@ const EditUserModal = ({ user, onClose, onSave }) => {
 
     onSave(updatedFormData);
   };
+
+  const canEditRole =
+    loggedInUser &&
+    (loggedInUser.role === "super_admin" ||
+      (loggedInUser.role === "admin" &&
+        loggedInUser.privileges?.includes("Assign Roles")));
 
   return (
     <div className="edit-user-modal-overlay">
@@ -118,47 +141,53 @@ const EditUserModal = ({ user, onClose, onSave }) => {
               className="edit-user-modal-input"
             />
           </label>
-          <label>
-            Role:
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              required
-              className="edit-user-modal-input"
-            >
-              <option value="admin">Admin</option>
-              <option value="user">User</option>
-            </select>
-          </label>
 
-          {formData.role === "admin" && (
+          {canEditRole && (
             <>
-              <label>Privileges:</label>
-              <div className="privileges-checkbox-group">
-                <label>
-                  <input
-                    type="checkbox"
-                    value="Select All"
-                    checked={
-                      formData.privileges.length === PRIVILEGES_OPTIONS.length
-                    }
-                    onChange={handlePrivilegesChange}
-                  />
-                  Select All
-                </label>
-                {PRIVILEGES_OPTIONS.map((privilege) => (
-                  <label key={privilege}>
-                    <input
-                      type="checkbox"
-                      value={privilege}
-                      checked={formData.privileges.includes(privilege)}
-                      onChange={handlePrivilegesChange}
-                    />
-                    {privilege}
-                  </label>
-                ))}
-              </div>
+              <label>
+                Role:
+                <select
+                  name="role"
+                  value={formData.role}
+                  onChange={handleChange}
+                  required
+                  className="edit-user-modal-input"
+                >
+                  <option value="admin">Admin</option>
+                  <option value="user">User</option>
+                </select>
+              </label>
+
+              {formData.role === "admin" && (
+                <>
+                  <label>Privileges:</label>
+                  <div className="privileges-checkbox-group">
+                    <label>
+                      <input
+                        type="checkbox"
+                        value="Select All"
+                        checked={
+                          formData.privileges.length ===
+                          PRIVILEGES_OPTIONS.length
+                        }
+                        onChange={handlePrivilegesChange}
+                      />
+                      Select All
+                    </label>
+                    {PRIVILEGES_OPTIONS.map((privilege) => (
+                      <label key={privilege}>
+                        <input
+                          type="checkbox"
+                          value={privilege}
+                          checked={formData.privileges.includes(privilege)}
+                          onChange={handlePrivilegesChange}
+                        />
+                        {privilege}
+                      </label>
+                    ))}
+                  </div>
+                </>
+              )}
             </>
           )}
 

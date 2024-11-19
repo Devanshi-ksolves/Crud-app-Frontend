@@ -20,7 +20,7 @@ const AdminDashboard = () => {
   const [page, setPage] = useState(1);
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
-  const [loggedInUser, setLoggedInUser] = useState(null); 
+  const [loggedInUser, setLoggedInUser] = useState(null);
 
   useEffect(() => {
     const fetchLoggedInUser = async () => {
@@ -42,7 +42,7 @@ const AdminDashboard = () => {
     const fetchUsers = async () => {
       setLoading(true);
       try {
-        const data = await getUsers({ page, pageSize });
+        const data = await getUsers({ page, pageSize, search: searchTerm });
         setUsers(data.users);
         setTotalPages(data.totalPages);
       } catch (error) {
@@ -54,7 +54,7 @@ const AdminDashboard = () => {
     };
 
     fetchUsers();
-  }, [page, pageSize]);
+  }, [page, pageSize, searchTerm]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -138,13 +138,13 @@ const AdminDashboard = () => {
   const handleLogout = () => {
     const originalUserId = localStorage.getItem("originalUserId");
     if (originalUserId) {
-      localStorage.setItem("userId", originalUserId); 
-      localStorage.removeItem("originalUserId"); 
+      localStorage.setItem("userId", originalUserId);
+      localStorage.removeItem("originalUserId");
     }
 
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
-    navigate("/"); 
+    navigate("/");
   };
 
   const handlePageChange = (newPage) => {
@@ -159,6 +159,12 @@ const AdminDashboard = () => {
       (loggedInUser.role === "admin" &&
         loggedInUser.privileges?.includes("Impersonate User")));
 
+  const canDelete =
+    loggedInUser &&
+    (loggedInUser.role === "super_admin" ||
+      (loggedInUser.role === "admin" &&
+        loggedInUser.privileges?.includes("Delete User")));
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
@@ -168,6 +174,12 @@ const AdminDashboard = () => {
         <h2 className="dashboard-title">Admin Dashboard</h2>
         <button className="logout-button" onClick={handleLogout}>
           Logout
+        </button>
+        <button
+          className="user-document-button"
+          onClick={() => navigate("/request-document")}
+        >
+          User Document
         </button>
         <input
           type="text"
@@ -204,17 +216,27 @@ const AdminDashboard = () => {
               <td>{user.email}</td>
               <td>{user.role}</td>
               <td>
-                <button onClick={() => handleEdit(user)}>Edit</button>
                 {canImpersonate && (
-                  <button onClick={() => handleImpersonate(user.id)}>
+                  <button
+                    className="impersonate-button"
+                    onClick={() => handleImpersonate(user.id)}
+                  >
                     Impersonate
                   </button>
                 )}
+                {canDelete && (
+                  <button
+                    className="delete-button"
+                    onClick={() => handleDelete(user.id)}
+                  >
+                    Delete
+                  </button>
+                )}
                 <button
-                  className="delete"
-                  onClick={() => handleDelete(user.id)}
+                  className="edit-button"
+                  onClick={() => handleEdit(user)}
                 >
-                  Delete
+                  Edit
                 </button>
               </td>
             </tr>
@@ -223,23 +245,22 @@ const AdminDashboard = () => {
       </table>
 
       <div className="pagination">
-        <button onClick={() => handlePageChange(page - 1)} disabled={page <= 1}>
-          Prev
-        </button>
-        <span>{`Page ${page} of ${totalPages}`}</span>
         <button
+          className="pagination-button"
+          onClick={() => handlePageChange(page - 1)}
+          disabled={page === 1}
+        >
+          Previous
+        </button>
+        <span>{`${page} / ${totalPages}`}</span>
+        <button
+          className="pagination-button"
           onClick={() => handlePageChange(page + 1)}
-          disabled={page >= totalPages}
+          disabled={page === totalPages}
         >
           Next
         </button>
       </div>
-
-      {filteredUsers.length === 0 && searchTerm && (
-        <p style={{ textAlign: "center", marginTop: "10px" }}>
-          No user found matching your search.
-        </p>
-      )}
     </div>
   );
 };

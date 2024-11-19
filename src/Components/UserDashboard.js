@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import {
+  getUser,
+  updateUser,
+  getRequestedDocuments,
+  uploadFiles,
+} from "../api/api";
+import DocumentUploadModal from "./DocumentUpload";
+import RequestedDocumentsList from "./RequestedDocumentsList";
 import { jwtDecode } from "jwt-decode";
-import { getUser, updateUser, uploadFiles } from "../api/api";
 
 const UserDashboard = () => {
   const navigate = useNavigate();
@@ -13,12 +20,15 @@ const UserDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    password: "", 
+    password: "",
     profilePicture: null,
     document: null,
   });
   const [previewImage, setPreviewImage] = useState(null);
   const [previewDocument, setPreviewDocument] = useState(null);
+  const [requestedDocuments, setRequestedDocuments] = useState([]);
+  const [selectedDocument, setSelectedDocument] = useState(null);
+  const [showDocumentList, setShowDocumentList] = useState(false);
 
   useEffect(() => {
     const fetchUserInfo = async () => {
@@ -37,6 +47,14 @@ const UserDashboard = () => {
 
         const userInfo = await getUser(userId);
         setUser(userInfo);
+
+        const documents = await getRequestedDocuments(userInfo.id);
+        if (Array.isArray(documents)) {
+          setRequestedDocuments(documents); 
+        } else {
+          console.error("Expected an array, but got:", documents);
+        }
+
         setFormData({
           name: userInfo.name,
           password: "",
@@ -44,9 +62,7 @@ const UserDashboard = () => {
           document: null,
         });
       } catch (error) {
-        setErrorMessage(
-          error.response ? error.response.data : "Failed to fetch user info"
-        );
+        console.log(error);
       }
     };
 
@@ -54,6 +70,14 @@ const UserDashboard = () => {
   }, [navigate]);
 
   const handleEditClick = () => setIsEditing(true);
+  const handleUploadClick = (document) => {
+    if (document) {
+      setSelectedDocument(document);
+    } else {
+      setSelectedDocument(null);
+    }
+    setShowDocumentList(!showDocumentList);
+  };
 
   const handleCancelClick = () => {
     setIsEditing(false);
@@ -171,10 +195,39 @@ const UserDashboard = () => {
           Logout
         </button>
         <h2>Welcome, {user.name}</h2>
-        <button className="edit-button" onClick={handleEditClick}>
-          Edit Profile
-        </button>
 
+        {!isEditing && (
+          <>
+            <button className="edit-button" onClick={handleEditClick}>
+              Edit Profile
+            </button>
+            {requestedDocuments.length > 0 && (
+              <button
+                className="edit-button"
+                onClick={() => handleUploadClick(null)}
+              >
+                Upload Documents
+              </button>
+            )}
+          </>
+        )}
+
+        {showDocumentList && requestedDocuments.length > 0 && (
+          <RequestedDocumentsList
+            documents={requestedDocuments}
+            onDocumentClick={handleUploadClick}
+            setDocuments={setRequestedDocuments}
+            userId={user.id}
+          />
+        )}
+        {selectedDocument && (
+          <DocumentUploadModal
+            documentId={selectedDocument.id}
+            documentType={selectedDocument.name}
+            userId={user.id}
+            onClose={() => setSelectedDocument(null)}
+          />
+        )}
         {isEditing && (
           <form onSubmit={handleSubmit} className="edit-form">
             <label>Name:</label>
@@ -233,7 +286,6 @@ const UserDashboard = () => {
                   >
                     ✕
                   </button>
-                  {/* Preview Image */}
                   {previewImage && (
                     <div className="preview-container">
                       <img
@@ -264,14 +316,13 @@ const UserDashboard = () => {
                   >
                     ✕
                   </button>
-                  {/* Document Preview */}
                   {previewDocument && (
                     <div className="preview-container">
                       <iframe
                         src={previewDocument}
                         title="Document Preview"
                         className="file-preview"
-                      ></iframe>
+                      />
                     </div>
                   )}
                 </div>

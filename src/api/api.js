@@ -33,11 +33,11 @@ export const login = async (credentials) => {
   const { token } = response;
 
   if (token) {
-    const decodedToken = jwtDecode(token); 
-    const userId = decodedToken.id; 
+    const decodedToken = jwtDecode(token);
+    const userId = decodedToken.id;
 
     localStorage.setItem("token", token);
-    localStorage.setItem("userId", userId); 
+    localStorage.setItem("userId", userId);
   }
 
   return response;
@@ -116,7 +116,7 @@ export const uploadFiles = async (userId, filesData) => {
     headers: {
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: formData, 
+    body: formData,
   });
 
   if (!response.ok) {
@@ -125,4 +125,49 @@ export const uploadFiles = async (userId, filesData) => {
   }
 
   return response.json();
+};
+
+export const requestDocuments = async (userId, documentTypes) => {
+  return fetchAPI("/request-document", "POST", { userId, documentTypes });
+};
+
+export const viewDocuments = async (userId) => {
+  return fetchAPI(`/view-documents/${userId}`, "GET");
+};
+
+export const acceptRejectDocument = async (documentId, status, reason) => {
+  return fetchAPI("/accept-reject-document", "POST", {
+    documentId,
+    status,
+    reason,
+  });
+};
+
+export const uploadDocumentImages = async (formData) => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Authorization token is missing.");
+  }
+
+  const response = await fetch(`${API_BASE_URL}/upload-document`, {
+    method: "POST",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorResponse = await response.json();
+    throw new Error(errorResponse.message || "Error uploading documents");
+  }
+
+  return response.json();
+};
+
+export const getUsersList = async (page = 1, pageSize = 10) => {
+  return fetchAPI(`/users?page=${page}&pageSize=${pageSize}`, "GET");
+};
+export const getRequestedDocuments = async (userId) => {
+  return fetchAPI(`/requested-documents/${userId}`, "GET");
 };

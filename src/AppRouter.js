@@ -5,6 +5,7 @@ import SignUp from "./Components/signUp";
 import AdminDashboard from "./Components/AdminDashboard";
 import UserDashboard from "./Components/UserDashboard";
 import SuperAdminDashboard from "./Components/SuperAdminDashboard";
+import UserDocumentRequest from "./Components/UserDocumentRequest";
 
 function AppRouter() {
   return (
@@ -15,6 +16,7 @@ function AppRouter() {
         <Route path="/sign-up" element={<SignUp />} />
         <Route path="/admin-dashboard" element={<AdminDashboard />} />
         <Route path="/user-dashboard" element={<UserDashboard />} />
+        <Route path="/request-document" element={<UserDocumentRequest />} />
         <Route
           path="/super-admin-dashboard"
           element={<SuperAdminDashboard />}
