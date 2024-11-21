@@ -115,6 +115,10 @@ const UserDocumentRequest = () => {
     }
   };
 
+  const handleViewDocuments = () => {
+    navigate("/view-documents");
+  };
+
   return (
     <div className="document-list-container">
       <button
@@ -132,6 +136,23 @@ const UserDocumentRequest = () => {
         }}
       >
         Back to Dashboard
+      </button>
+
+      <button
+        className="view-document-button"
+        onClick={handleViewDocuments}
+        style={{
+          position: "absolute",
+          top: "10px",
+          right: "150px",
+          padding: "10px",
+          backgroundColor: "#28a745",
+          color: "#fff",
+          border: "none",
+          borderRadius: "5px",
+        }}
+      >
+        View Document
       </button>
 
       <h2 className="document-list-title">User Document Request</h2>

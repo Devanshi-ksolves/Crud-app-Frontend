@@ -2,6 +2,7 @@ import { jwtDecode } from "jwt-decode";
 
 const API_BASE_URL = "http://localhost:3000/api/users";
 
+
 export const fetchAPI = async (endpoint, method = "GET", body = null) => {
   const token = localStorage.getItem("token");
 
@@ -135,11 +136,10 @@ export const viewDocuments = async (userId) => {
   return fetchAPI(`/view-documents/${userId}`, "GET");
 };
 
-export const acceptRejectDocument = async (documentId, status, reason) => {
+export const acceptRejectDocument = async (documentId, status) => {
   return fetchAPI("/accept-reject-document", "POST", {
     documentId,
     status,
-    reason,
   });
 };
 
@@ -170,4 +170,14 @@ export const getUsersList = async (page = 1, pageSize = 10) => {
 };
 export const getRequestedDocuments = async (userId) => {
   return fetchAPI(`/requested-documents/${userId}`, "GET");
+};
+export const getUsersWithDocuments = async () => {
+  return fetchAPI("/users-with-documents", "GET");
+};
+export const getUserDocument = async (userId, uploaded, status) => {
+  const queryParams = new URLSearchParams();
+  if (uploaded !== undefined) queryParams.append("uploaded", uploaded);
+  if (status) queryParams.append("status", status);
+
+  return fetchAPI(`/user/${userId}/documents?${queryParams.toString()}`, "GET");
 };
