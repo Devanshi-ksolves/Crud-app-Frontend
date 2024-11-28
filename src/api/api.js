@@ -2,7 +2,6 @@ import { jwtDecode } from "jwt-decode";
 
 const API_BASE_URL = "http://localhost:3000/api/users";
 
-
 export const fetchAPI = async (endpoint, method = "GET", body = null) => {
   const token = localStorage.getItem("token");
 
@@ -168,12 +167,15 @@ export const uploadDocumentImages = async (formData) => {
 export const getUsersList = async (page = 1, pageSize = 10) => {
   return fetchAPI(`/users?page=${page}&pageSize=${pageSize}`, "GET");
 };
+
 export const getRequestedDocuments = async (userId) => {
   return fetchAPI(`/requested-documents/${userId}`, "GET");
 };
+
 export const getUsersWithDocuments = async () => {
   return fetchAPI("/users-with-documents", "GET");
 };
+
 export const getUserDocument = async (userId, uploaded, status) => {
   const queryParams = new URLSearchParams();
   if (uploaded !== undefined) queryParams.append("uploaded", uploaded);
@@ -181,3 +183,39 @@ export const getUserDocument = async (userId, uploaded, status) => {
 
   return fetchAPI(`/user/${userId}/documents?${queryParams.toString()}`, "GET");
 };
+
+export const getNotifications = async (adminId) => {
+  try {
+    const response = await fetchAPI(`/notifications/${adminId}`, "GET");
+    return response;
+  } catch (error) {
+    console.error("Error fetching notifications:", error);
+    throw error;
+  }
+};
+
+export const markNotificationsAsRead = async (adminId) => {
+  try {
+    const response = await fetchAPI(`/${adminId}/mark-as-read`, "POST", {
+      headers: {
+        "Content-Type": "application/json", 
+      },
+      body: JSON.stringify({ adminId }), 
+    });
+
+    if (response.headers["content-type"].includes("application/json")) {
+      console.log("Success:", response.data);
+    } else {
+      console.error("Received non-JSON response");
+    }
+  } catch (error) {
+    if (error.response) {
+      console.error("Error response:", error.response);
+    } else if (error.request) {
+      console.error("Error request:", error.request);
+    } else {
+      console.error("Error message:", error.message);
+    }
+  }
+};
+

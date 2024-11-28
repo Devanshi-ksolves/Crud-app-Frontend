@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getUsers,
@@ -6,8 +6,12 @@ import {
   updateUser,
   impersonateUser,
   getUser,
+  getNotifications,
+  markNotificationsAsRead,
 } from "../api/api";
 import EditUserModal from "./EditUserModal";
+import io from "socket.io-client";
+import { Link } from "react-router-dom";
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +25,27 @@ const AdminDashboard = () => {
   const [pageSize] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
   const [loggedInUser, setLoggedInUser] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] =
+    useState(false);
+
+  const socketRef = useRef(null);
+
+  useEffect(() => {
+    socketRef.current = io("http://localhost:3000");
+    socketRef.current.on("newNotification", (notification) => {
+      setNotifications((prevNotifications) => [
+        ...prevNotifications,
+        notification,
+      ]);
+      setUnreadCount((prevCount) => prevCount + 1);
+    });
+
+    return () => {
+      socketRef.current.off("newNotification");
+    };
+  }, []);
 
   useEffect(() => {
     const fetchLoggedInUser = async () => {
@@ -55,6 +80,26 @@ const AdminDashboard = () => {
 
     fetchUsers();
   }, [page, pageSize, searchTerm]);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const adminId = localStorage.getItem("userId");
+        if (adminId) {
+          const notificationsData = await getNotifications(adminId);
+          setNotifications(notificationsData);
+          setUnreadCount(
+            notificationsData.filter((notification) => !notification.seen)
+              .length
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    };
+
+    fetchNotifications();
+  }, [loggedInUser]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -153,6 +198,54 @@ const AdminDashboard = () => {
     }
   };
 
+  const toggleNotificationsDropdown = async () => {
+    setShowNotificationsDropdown((prevState) => {
+      if (prevState) {
+        handleMarkNotificationsAsRead(); 
+      }
+      return !prevState;
+    });
+
+    if (notifications.length === 0) {
+      try {
+        const adminId = localStorage.getItem("userId");
+        if (adminId) {
+          const notificationsData = await getNotifications(adminId);
+          setNotifications(notificationsData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch notifications:", error);
+      }
+    }
+  };
+
+  const handleMarkNotificationsAsRead = async () => {
+    try {
+      const adminId = localStorage.getItem("userId");
+      if (!adminId) {
+        throw new Error("Admin ID is missing");
+      }
+
+      const response = await markNotificationsAsRead(adminId);
+      console.log("Response from API:", response);
+
+      setNotifications((prevNotifications) =>
+        prevNotifications.map((notification) => ({
+          ...notification,
+          seen: true,
+        }))
+      );
+
+      setUnreadCount(0);
+      setShowNotificationsDropdown(false);
+    } catch (error) {
+      console.error("Failed to mark notifications as read:", error.message);
+      if (error.response) {
+        console.error("Error response:", error.response.data);
+      }
+    }
+  };
+
   const canImpersonate =
     loggedInUser &&
     (loggedInUser.role === "super_admin" ||
@@ -188,6 +281,44 @@ const AdminDashboard = () => {
           placeholder="Search by name..."
           className="search-input"
         />
+        <div className="notifications-container">
+          <div
+            className="notification-bell"
+            onClick={toggleNotificationsDropdown}
+          >
+            🔔{" "}
+            {unreadCount > 0 && (
+              <span className="notification-count">{unreadCount}</span>
+            )}
+          </div>
+          {showNotificationsDropdown && (
+            <div className="notifications-dropdown">
+              {notifications.length === 0 ? (
+                <p>No new notifications at the moment.</p>
+              ) : (
+                <>
+                  <button onClick={handleMarkNotificationsAsRead}>
+                    Mark all as read
+                  </button>
+                  <ul>
+                    {notifications.map((notification) => (
+                      <li
+                        key={notification.id}
+                        className={`notification-item ${
+                          notification.isRead ? "read" : "unread"
+                        }`}
+                      >
+                        <Link to={notification.link}>
+                          {notification.message}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {showModal && selectedUser && (

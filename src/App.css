@@ -5,6 +5,8 @@ body {
   height: 100vh;
   margin: 0;
   background-color: #f4f4f4;
+  overflow-x: hidden;
+  overflow-y: hidden;
 }
 
 .auth-form {
@@ -154,7 +156,7 @@ body {
   flex-direction: column;
   align-items: center;
   width: 100vw;
-  height: 100vh;
+  height: 112vh;
   padding-top: 20px !important;
   background-color: #f9f9f9;
   box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
@@ -165,6 +167,7 @@ body {
   font-size: 25px;
   margin-bottom: 1px;
   color: #333;
+  padding-top: 20px;
 }
 
 .dashboard-table {
@@ -487,7 +490,7 @@ input[type="file"] {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-top: 20px;
+  margin-top: 0.5px;
 }
 
 .pagination button {
@@ -1073,7 +1076,7 @@ button.continue-uploading:hover {
 }
 
 .view-documents-container {
-  width: 100%;
+  width: 195vh;
   height: 100vh;
   padding: 20px;
   background-color: #fff;
@@ -1082,14 +1085,14 @@ button.continue-uploading:hover {
   flex-direction: column;
 }
 
-h2 {
+.heading {
   text-align: center;
   font-size: 28px;
   color: #007bff;
   margin-bottom: 20px;
 }
 
-h3 {
+.headings {
   font-size: 18px;
   margin-bottom: 10px;
   text-align: center;
@@ -1115,14 +1118,29 @@ h3 {
 .user-list li:hover {
   background-color: #f1f9ff;
 }
+.documented-list {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 1);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 80%;
+  max-width: 600px;
+  height: 90%;
+  overflow-y: auto;
+  z-index: 1000;
+}
 
-.documents-list ul {
+.documented-list ul {
   list-style-type: none;
   padding: 0;
   margin: 0;
 }
 
-.documents-list li {
+.documented-list li {
   padding: 10px;
   border-bottom: 1px solid #e0e0e0;
   display: flex;
@@ -1232,4 +1250,123 @@ h3 {
 
 .reject-button:hover {
   background-color: #c82333;
+}
+/* Notification Container */
+.notifications-container {
+  position: absolute;
+  top: 20px;
+  right: 230px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  z-index: 10;
+}
+
+
+.notification-bell {
+  font-size: 24px;
+  cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  border-radius: 50%;
+  background-color: #f4f4f4;
+  transition: background-color 0.3s ease;
+}
+
+.notification-bell:hover {
+  background-color: #e0e0e0;
+}
+
+.notification-count {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  background-color: #ff5733;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 3px 6px;
+  border-radius: 50%;
+}
+
+.notifications-dropdown {
+  position: absolute;
+  top: 40px;
+  right: 0;
+  background-color: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  width: 300px;
+  max-height: 400px;
+  overflow-y: auto;
+  z-index: 100;
+  padding: 10px;
+}
+
+.notifications-dropdown button {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 8px;
+  font-size: 14px;
+  width: 100%;
+  margin-bottom: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.notifications-dropdown button:hover {
+  background-color: #45a049;
+}
+
+.notifications-dropdown ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.notification-item {
+  padding: 10px;
+  border-bottom: 1px solid #f1f1f1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.3s ease;
+}
+
+.notification-item:hover {
+  background-color: #f9f9f9;
+}
+
+.notification-item.read {
+  background-color: #f0f0f0;
+}
+
+.notification-item.unread {
+  background-color: #fafafa;
+  font-weight: bold;
+}
+
+.notification-item a {
+  color: #333;
+  text-decoration: none;
+}
+
+.notification-item a:hover {
+  text-decoration: underline;
+}
+
+.notification-item .close-icon {
+  font-size: 16px;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.3s ease;
+}
+
+.notification-item .close-icon:hover {
+  color: #333;
 }
